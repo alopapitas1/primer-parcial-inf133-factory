@@ -24,21 +24,21 @@ class Producto:
         self.products=products
 
 class Fisico(Producto):
-    def __init__(self,tipo,client,status,payment,shipings,products):
+    def __init__(self,tipo,client,status,payment,shipings,products,code,expiration):
         super().__init__("fisico",tipo,client,status,payment,shipings,products)
 
 class digital(Producto):
-    def __init__(self,tipo,client,status,payment,shipings,products):
-        super().__init__("fisico",tipo,client,status,payment,shipings,products)
+    def __init__(self,tipo,client,status,payment,code,expiration):
+        super().__init__("fisico",tipo,client,status,payment,code,expiration)
 
 
 class ProductFactory:
     @staticmethod
-    def crear_producto(tipo,client,status,payment,shipings,products):
+    def crear_producto(tipo,client,status,payment,shipings,products,code,expiration):
         if tipo == "fisico":
             return Fisico(tipo,client,status,payment,shipings,products)
         elif tipo == "digital":
-            return digital(tipo,client,status,payment,shipings,products)
+            return digital(tipo,client,status,payment,code,expiration)
         else:
             raise ValueError("Tipo de producto no valido")
         
