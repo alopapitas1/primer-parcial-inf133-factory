@@ -1,76 +1,66 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer,BaseHTTPRequestHandler
 import json
-from urllib.parse import urlparse , parse_qs
-
-
+from urllib.parse import parse_qs,urlparse
 pedidos=[
     {
-        "tipo":"fisico",
-        "id":"1",
-        "client":"juan",
-        "status":"pendiente",
-        "payment":"paypal",
-        "shipings":"200",
-        "products":"camisa",
-    },
+        1:{
+            "tipo":"fisico",
+            "client":"juan Perez",
+            "status":"pendiente",
+            "payment":"tarjeta de credito",
+            "shipings":"10",
+            "products":"camisa",
+        },
+    }
 ]
 
-
-
-
-
-class Pedido:
-    def __init__(self,tipo, id,client,status,payment,shiping,products,code,expiration):
+class Producto:
+    def __init__(self,tipo,client,status,payment,shipings,products):
         self.tipo=tipo
-        self.id=id
         self.client=client
         self.status=status
-        self.payment=payment
-        self.shiping=shiping
+        self.payments=payment
+        self.shipings=shipings
         self.products=products
-        self.code=code
-        self.expiration=expiration
-        
 
-class Fisico:
-    def __init__(self,id,client,status,payment,shipings,products,code,expiration):
-        super().__init__("fisico", id,client,status,payment,shipings,products,code,expiration)
-        
-class digital:
-    def __init__(self,id,client,status,payment,shipings,products,code,expiration):
-        super().__init__("digital", id,client,status,payment,shipings,products,code,expiration)
-        
+class Fisico(Producto):
+    def __init__(self,tipo,client,status,payment,shipings,products):
+        super().__init__("fisico",tipo,client,status,payment,shipings,products)
 
-class FabricPedido:
+class digital(Producto):
+    def __init__(self,tipo,client,status,payment,shipings,products):
+        super().__init__("fisico",tipo,client,status,payment,shipings,products)
+
+
+class ProductFactory:
     @staticmethod
-    def crear_pedido(tipo,id,client,status,payment,shipings,products,code,expiration):
-        if tipo=="fisico":
-            return Fisico(id,client,status,payment,shipings,products,None,None)
-        elif tipo=="digital":
-            return Fisico(id,client,status,payment,None,None,code,expiration)
-        
+    def crear_producto(tipo,client,status,payment,shipings,products):
+        if tipo == "fisico":
+            return Fisico(tipo,client,status,payment,shipings,products)
+        elif tipo == "digital":
+            return digital(tipo,client,status,payment,shipings,products)
         else:
-            raise ValueError("tipo de pedido no valido")
-
+            raise ValueError("Tipo de producto no valido")
+        
 class PedidoService:
     def __init__(self):
-        self.fafabrica=FabricPedido()
+        self.factory=ProductFactory()
+
+    def create_pedido(self,data):
+        tipo=data.get('tipo',None)
+        client=data.get('client',None)
+        status=data.get('status',None)
+        payment=data.get('payment',None)
+        shipings=data.get('shipings',None)
+        products=data.get('products',None)
         
-    def create_pedido(self, data):
-        tipo=data.get("tipo",None)
-        id=data.get("id",None)
-        client=data.get("client",None)
-        status=data.get("status",None)
-        payment=data.get("payment",None)
-        shipings=data.get("shipings",None)
-        products=data.get("products",None)
-        code=data.get("code",None)
-        expiration=data.get("expiration",None)
-        pedido=self.fafabrica.crear_pedido(tipo,id,client,status,payment,shipings,products,code,expiration)
-        
+        pedido=self.factory.crear_producto(
+            tipo,client,status,payment,shipings,products
+        )
         id=max(pedidos[0].keys())+1
         pedidos[0][id]=(pedido.__dict__)
         return pedido.__dict__
+    
     
     def buscar_status(self,status):
         n=[{}]
@@ -130,3 +120,54 @@ class PedidoHandler(BaseHTTPRequestHandler):
                 HTTPResponseHandler.response_handler(self,200,pedidos)
         else:
             HTTPResponseHandler.response_handler(self,404,{"Error":"Ruta no encontrada"})
+
+    def do_POST(self):
+        if self.path == "/pedidos":
+            data=HTTPResponseHandler.read_data(self)
+            animal_c=self.controller.create_pedido(data)
+            HTTPResponseHandler.response_handler(self,201,animal_c)
+        else:
+            HTTPResponseHandler.response_handler(self,404,{"Error":"Ruta no encontrada"})
+
+    def do_PUT(self):
+        if self.path.startswith("/pedidos/"):
+            id=int(self.path.split("/")[-1])
+            data=HTTPResponseHandler.read_data(self)
+            pedido=self.controller.actualizar_pedido(id,data)
+            if pedido:
+                HTTPResponseHandler.response_handler(self,200,pedido)
+            else:
+                HTTPResponseHandler.response_handler(self,404,{"Error":"ID no encontrada"})
+        else:
+            HTTPResponseHandler.response_handler(self,404,{"Error":"Ruta no encontrada"})
+
+    def do_DELETE(self):
+        if self.path.startswith("/pedidos/"):
+            id=int(self.path.split("/")[-1])
+            pedido=self.controller.borrar_pedido(id)
+            if pedido:
+                HTTPResponseHandler.response_handler(self,200,pedido)
+            else:
+                HTTPResponseHandler.response_handler(self,404,{"Error":"ID no encontrado"})
+        else:
+            HTTPResponseHandler.response_handler(self,404,{"Error":"Ruta no encontrada"})
+
+
+def main(port=8000):
+    try:
+        server_adress=('',port)
+        httpd=HTTPServer(server_adress,PedidoHandler)
+        print(f'Iniciando el servidor en el puerto {port}...')
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("Apagando el servidor")
+        httpd.socket.close()
+
+if __name__ == "__main__":
+    main()
+            
+    
+    
+    
+    
+        
