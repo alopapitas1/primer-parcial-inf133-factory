@@ -19,11 +19,6 @@ pedidos=[
 
 
 
-
-
-
-
-
 class Pedido:
     def __init__(self,tipo, id,client,status,payment,shiping,products,code,expiration):
         self.tipo=tipo
@@ -61,7 +56,7 @@ class PedidoService:
     def __init__(self):
         self.fafabrica=FabricPedido()
         
-    def crear_pedido(self, data):
+    def create_pedido(self, data):
         tipo=data.get("tipo",None)
         id=data.get("id",None)
         client=data.get("client",None)
@@ -93,7 +88,7 @@ class PedidoService:
                 return pedidos
         return None
     
-    def borrar_animal(self,id):
+    def borrar_pedido(self,id):
         lista=pedidos[0].keys()
         for i in lista:
             if i==id:
@@ -115,7 +110,7 @@ class HTTPResponseHandler:
         data=handler.rfile.read(content_length)
         return json.loads(data.decode('utf-8'))
     
-class AnimalHandler(BaseHTTPRequestHandler):
+class PedidoHandler(BaseHTTPRequestHandler):
     def __init__(self,*args,**kwargs):
         self.controller=PedidoService()
         super().__init__(*args,**kwargs)
@@ -135,10 +130,3 @@ class AnimalHandler(BaseHTTPRequestHandler):
                 HTTPResponseHandler.response_handler(self,200,pedidos)
         else:
             HTTPResponseHandler.response_handler(self,404,{"Error":"Ruta no encontrada"})
-
-    def do_POST(self):
-        if self.path == "/pedidos":
-            data=HTTPResponseHandler.read_data(self)
-            animal_c=self.controller.create_pedido(data)
-            HTTPResponseHandler.response_handler(self,201,animal_c)
-        else:
